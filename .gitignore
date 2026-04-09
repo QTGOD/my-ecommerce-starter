@@ -1,0 +1,7 @@
+/.gradle
+/build
+/.idea
+/.vscode
+/node_modules
+/frontend/dist
+*.log
