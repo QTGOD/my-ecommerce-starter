@@ -8,5 +8,6 @@ include(
     "services:cart-service",
     "services:order-service",
     "services:inventory-listener",
-    "services:payment-service"
+    "services:payment-service",
+    "services:integration-test"
 )
