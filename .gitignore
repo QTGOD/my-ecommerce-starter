@@ -6,6 +6,4 @@
 /frontend/dist
 *.log
 /frontend/node_modules
-gradlew
-gradlew.bat
 /*/*/build/
