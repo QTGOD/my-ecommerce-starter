@@ -1,7 +1,11 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
+
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'   # 立刻启用 Node.js 24 以避免 Node 20 被移除后的问题
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build:
@@ -9,22 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug environment
-        run: |
-          echo "PWD: $(pwd)"
-          echo "PATH: $PATH"
-          node -v || true
-          java -version || true
-          command -v mvn || echo "mvn not found"
-
-      - name: Setup Java (example)
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
+          cache: gradle
 
-      - name: Run build
-        run: |
-          set -x
-          # 你的构建命令，例如
-          mvn -B -DskipTests package
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build --no-daemon
