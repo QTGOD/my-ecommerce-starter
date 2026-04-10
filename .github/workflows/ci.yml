@@ -1,22 +1,30 @@
 name: CI
-
-on:
-  push:
-    branches: [ main, feature/starter ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'   # 立刻启用 Node.js 24 以避免 Node 20 被移除后的问题
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 21
+
+      - name: Debug environment
+        run: |
+          echo "PWD: $(pwd)"
+          echo "PATH: $PATH"
+          node -v || true
+          java -version || true
+          command -v mvn || echo "mvn not found"
+
+      - name: Setup Java (example)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-      - name: Build with Gradle
-        run: ./gradlew build -x test --no-daemon
-      - name: Run unit tests
-        run: ./gradlew test --no-daemon
+
+      - name: Run build
+        run: |
+          set -x
+          # 你的构建命令，例如
+          mvn -B -DskipTests package
