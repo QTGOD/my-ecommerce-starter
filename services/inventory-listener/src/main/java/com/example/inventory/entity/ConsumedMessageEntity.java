@@ -30,4 +30,5 @@ public class ConsumedMessageEntity {
   public void setConsumerName(String consumerName) { this.consumerName = consumerName; }
   public String getEventType() { return eventType; }
   public void setEventType(String eventType) { this.eventType = eventType; }
+  public LocalDateTime getConsumedAt() { return consumedAt; }
 }

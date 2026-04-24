@@ -8,3 +8,18 @@ server:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    urls:
+      - name: gateway-service
+        url: /v3/api-docs
+      - name: auth-service
+        url: /swagger-docs/auth-service
+      - name: product-service
+        url: /swagger-docs/product-service
+      - name: cart-service
+        url: /swagger-docs/cart-service
+      - name: order-service
+        url: /swagger-docs/order-service
+      - name: inventory-listener
+        url: /swagger-docs/inventory-listener
+      - name: payment-service
+        url: /swagger-docs/payment-service

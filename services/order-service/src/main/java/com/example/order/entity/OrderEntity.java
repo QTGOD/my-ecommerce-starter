@@ -69,4 +69,6 @@ public class OrderEntity {
   public void setReceiverPhone(String receiverPhone) { this.receiverPhone = receiverPhone; }
   public String getReceiverAddressSnapshot() { return receiverAddressSnapshot; }
   public void setReceiverAddressSnapshot(String receiverAddressSnapshot) { this.receiverAddressSnapshot = receiverAddressSnapshot; }
+  public LocalDateTime getCreatedAt() { return createdAt; }
+  public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

@@ -48,4 +48,6 @@ public class Product {
   public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
+  public LocalDateTime getCreatedAt() { return createdAt; }
+  public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

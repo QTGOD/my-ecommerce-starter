@@ -1,23 +1,24 @@
 package com.example.cart.controller;
 
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import com.example.cart.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,73 +27,121 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/cart")
-@Tag(name = "Cart", description = "购物车读写接口")
+@Tag(name = "Cart", description = "Shopping cart read and write APIs")
 public class CartController {
-  private final Map<Long, List<CartItem>> carts = new ConcurrentHashMap<>();
+  private final CartService cartService;
+
+  public CartController(CartService cartService) {
+    this.cartService = cartService;
+  }
 
   @GetMapping
-  @Operation(summary = "查询购物车", description = "按用户 ID 查询当前购物车内容")
+  @Operation(summary = "Get cart", description = "Query current cart items and totals by user ID")
   @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "查询成功")
+      @ApiResponse(responseCode = "200", description = "Query success"),
+      @ApiResponse(responseCode = "400", description = "User ID invalid")
   })
   public CartResponse getCart(@RequestParam Long userId) {
-    return new CartResponse(userId, new ArrayList<>(carts.getOrDefault(userId, List.of())));
+    return toResponse(cartService.getCart(userId));
   }
 
   @PostMapping("/items")
   @ResponseStatus(HttpStatus.CREATED)
-  @Operation(summary = "加入购物车", description = "新增或覆盖同一个 SKU 的购物车项")
+  @Operation(summary = "Add cart item", description = "Add an item, and merge quantity if the SKU already exists")
   @ApiResponses({
-      @ApiResponse(responseCode = "201", description = "加入成功"),
-      @ApiResponse(responseCode = "400", description = "请求参数不合法")
+      @ApiResponse(responseCode = "201", description = "Add success"),
+      @ApiResponse(responseCode = "400", description = "Request parameters invalid")
   })
   public CartResponse addItem(@Valid @RequestBody AddCartItemRequest request) {
-    List<CartItem> items = new ArrayList<>(carts.getOrDefault(request.userId(), List.of()));
-    items.removeIf(item -> item.skuId().equals(request.skuId()));
-    items.add(new CartItem(
+    return toResponse(cartService.addItem(new CartService.AddItemCommand(
+        request.userId(),
         request.productId(),
         request.skuId(),
         request.productName(),
         request.unitPrice(),
-        request.quantity()));
-    carts.put(request.userId(), items);
-    return new CartResponse(request.userId(), items);
+        request.quantity())));
+  }
+
+  @PutMapping("/items/{skuId}")
+  @Operation(summary = "Update quantity", description = "Update an existing cart item quantity")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Update success"),
+      @ApiResponse(responseCode = "400", description = "Request parameters invalid")
+  })
+  public CartResponse updateItemQuantity(
+      @PathVariable Long skuId,
+      @RequestParam Long userId,
+      @Valid @RequestBody UpdateCartItemQuantityRequest request) {
+    return toResponse(cartService.updateQuantity(userId, skuId, request.quantity()));
   }
 
   @DeleteMapping("/items/{skuId}")
-  @Operation(summary = "移除购物车项", description = "按用户 ID 和 SKU ID 删除购物车项")
+  @Operation(summary = "Remove cart item", description = "Delete a cart item by user ID and SKU ID")
   @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "移除成功")
+      @ApiResponse(responseCode = "200", description = "Remove success")
   })
   public CartResponse removeItem(@PathVariable Long skuId, @RequestParam Long userId) {
-    List<CartItem> items = new ArrayList<>(carts.getOrDefault(userId, List.of()));
-    items.removeIf(item -> item.skuId().equals(skuId));
-    carts.put(userId, items);
-    return new CartResponse(userId, items);
+    return toResponse(cartService.removeItem(userId, skuId));
+  }
+
+  @DeleteMapping
+  @Operation(summary = "Clear cart", description = "Clear all items for a user")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Clear success")
+  })
+  public CartResponse clearCart(@RequestParam Long userId) {
+    return toResponse(cartService.clearCart(userId));
+  }
+
+  private CartResponse toResponse(CartService.CartView view) {
+    List<CartItemResponse> items = view.items().stream()
+        .map(item -> new CartItemResponse(
+            item.productId(),
+            item.skuId(),
+            item.productName(),
+            item.unitPrice(),
+            item.quantity(),
+            item.lineAmount()))
+        .toList();
+
+    return new CartResponse(
+        view.userId(),
+        items,
+        view.itemCount(),
+        view.totalQuantity(),
+        view.totalAmount());
   }
 
   public record AddCartItemRequest(
-      @Schema(description = "用户 ID", example = "1")
-      @NotNull Long userId,
-      @Schema(description = "商品 ID", example = "1")
-      @NotNull Long productId,
+      @Schema(description = "User ID", example = "1")
+      @NotNull @Positive Long userId,
+      @Schema(description = "Product ID", example = "1")
+      @NotNull @Positive Long productId,
       @Schema(description = "SKU ID", example = "1")
-      @NotNull Long skuId,
-      @Schema(description = "商品名称", example = "Mechanical Keyboard")
+      @NotNull @Positive Long skuId,
+      @Schema(description = "Product name", example = "Mechanical Keyboard")
       @NotBlank String productName,
-      @Schema(description = "单价", example = "399.00")
-      @NotNull BigDecimal unitPrice,
-      @Schema(description = "数量", example = "1")
-      @NotNull Integer quantity) {}
+      @Schema(description = "Unit price", example = "399.00")
+      @NotNull @DecimalMin("0.00") BigDecimal unitPrice,
+      @Schema(description = "Quantity", example = "1")
+      @NotNull @Positive Integer quantity) {}
 
-  public record CartItem(
-      @Schema(description = "商品 ID", example = "1") Long productId,
+  public record UpdateCartItemQuantityRequest(
+      @Schema(description = "Quantity", example = "3")
+      @NotNull @Positive Integer quantity) {}
+
+  public record CartItemResponse(
+      @Schema(description = "Product ID", example = "1") Long productId,
       @Schema(description = "SKU ID", example = "1") Long skuId,
-      @Schema(description = "商品名称", example = "Mechanical Keyboard") String productName,
-      @Schema(description = "单价", example = "399.00") BigDecimal unitPrice,
-      @Schema(description = "数量", example = "1") Integer quantity) {}
+      @Schema(description = "Product name", example = "Mechanical Keyboard") String productName,
+      @Schema(description = "Unit price", example = "399.00") BigDecimal unitPrice,
+      @Schema(description = "Quantity", example = "1") Integer quantity,
+      @Schema(description = "Line amount", example = "399.00") BigDecimal lineAmount) {}
 
   public record CartResponse(
-      @Schema(description = "用户 ID", example = "1") Long userId,
-      @Schema(description = "购物车项") List<CartItem> items) {}
+      @Schema(description = "User ID", example = "1") Long userId,
+      @Schema(description = "Cart items") List<CartItemResponse> items,
+      @Schema(description = "Number of distinct cart items", example = "2") Integer itemCount,
+      @Schema(description = "Total quantity", example = "3") Integer totalQuantity,
+      @Schema(description = "Total amount", example = "798.00") BigDecimal totalAmount) {}
 }

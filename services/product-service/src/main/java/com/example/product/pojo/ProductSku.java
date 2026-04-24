@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product_skus")
@@ -30,6 +31,10 @@ public class ProductSku {
   private Integer lockedStock = 0;
   @Column(nullable = false, length = 32)
   private String status = "ON_SALE";
+  @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+  private LocalDateTime createdAt;
+  @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
+  private LocalDateTime updatedAt;
 
   public Long getId() { return id; }
   public Long getProductId() { return productId; }
@@ -48,4 +53,6 @@ public class ProductSku {
   public void setLockedStock(Integer lockedStock) { this.lockedStock = lockedStock; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
+  public LocalDateTime getCreatedAt() { return createdAt; }
+  public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

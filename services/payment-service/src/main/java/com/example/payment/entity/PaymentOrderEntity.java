@@ -51,6 +51,8 @@ public class PaymentOrderEntity {
   public void setStatus(String status) { this.status = status; }
   public String getThirdPartyTxnId() { return thirdPartyTxnId; }
   public void setThirdPartyTxnId(String thirdPartyTxnId) { this.thirdPartyTxnId = thirdPartyTxnId; }
+  public LocalDateTime getCreatedAt() { return createdAt; }
   public LocalDateTime getPaidAt() { return paidAt; }
   public void setPaidAt(LocalDateTime paidAt) { this.paidAt = paidAt; }
+  public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

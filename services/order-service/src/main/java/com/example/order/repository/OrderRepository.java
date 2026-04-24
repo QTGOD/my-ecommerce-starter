@@ -9,4 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
   Optional<OrderEntity> findByIdempotencyKey(String idempotencyKey);
   List<OrderEntity> findByUserIdOrderByIdDesc(Long userId);
+  List<OrderEntity> findByUserIdAndStatusOrderByIdDesc(Long userId, String status);
 }

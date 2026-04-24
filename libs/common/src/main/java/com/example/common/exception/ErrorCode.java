@@ -3,6 +3,8 @@ package com.example.common.exception;
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
+  INVALID_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_400_003", "Invalid request"),
+  RESOURCE_CONFLICT(HttpStatus.CONFLICT, "COMMON_409_001", "Resource conflict"),
   USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_409_001", "Username or email already exists"),
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_401_001", "Invalid credentials"),
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "AUTH_404_001", "User not found"),
